@@ -67,7 +67,7 @@ func getNewToken(c *middleware.Context) (string, error) {
 	var keystonePasswordObj interface{}
 	if setting.KeystoneCookieCredentials {
 		if setting.KeystoneCredentialAesKey != "" {
-			c.GetCookie(middleware.SESS_KEY_PASSWORD)
+			keystonePasswordObj = c.GetCookie(middleware.SESS_KEY_PASSWORD)
 		} else {
 			keystonePasswordObj = c.GetCookie(middleware.SESS_KEY_PASSWORD)
 		}
