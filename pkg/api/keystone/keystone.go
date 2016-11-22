@@ -66,8 +66,7 @@ func getNewToken(c *middleware.Context) (string, error) {
 
 	var keystonePasswordObj interface{}
 	if setting.KeystoneCookieCredentials {
-		keystonePasswordObj = c.GetCookie(middleware.SESS_KEY_PASSWORD)
-		if keystonePasswordObj == nil {
+		if keystonePasswordObj = c.GetCookie(middleware.SESS_KEY_PASSWORD); keystonePasswordObj == nil {
 			return "", errors.New("Couldn't find cookie containing keystone password")
 		} else {
 			log.Debug("Got password from cookie")
@@ -94,7 +93,7 @@ func getNewToken(c *middleware.Context) (string, error) {
 	}
 	if err := AuthenticateScoped(&auth); err != nil {
 		if setting.KeystoneCookieCredentials {
-			c.SetCookie(middleware.SESS_KEY_PASSWORD, "", 0)
+			c.SetCookie(middleware.SESS_KEY_PASSWORD, "", -1, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
 		} else {
 			c.Session.Set(middleware.SESS_KEY_PASSWORD, nil)
 		}
@@ -182,7 +181,15 @@ func decryptPassword(base64ciphertext string) string {
 		log.Error(3, "Error: NewCipher(%d bytes) = %s", len(setting.KeystoneCredentialAesKey), err)
 	}
 	ciphertext, err := base64.StdEncoding.DecodeString(base64ciphertext)
+	if err != nil {
+		log.Error(3, "Error: %s", err)
+		return ""
+	}
 	iv := ciphertext[:aes.BlockSize]
+	if aes.BlockSize > len(ciphertext) {
+		log.Error(3, "Error: ciphertext %s is shorter than AES blocksize %d", ciphertext, aes.BlockSize)
+		return ""
+	}
 	password := make([]byte, len(ciphertext)-aes.BlockSize)
 	stream := cipher.NewOFB(block, iv)
 	stream.XORKeyStream(password, ciphertext[aes.BlockSize:])

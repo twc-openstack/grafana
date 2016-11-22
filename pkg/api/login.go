@@ -13,7 +13,6 @@ import (
 	m "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
-	"gopkg.in/macaron.v1"
 )
 
 const (
@@ -125,7 +124,7 @@ func LoginPost(c *middleware.Context, cmd dtos.LoginCommand) Response {
 			} else {
 				days = 86400 * setting.LogInRememberDays
 			}
-			c.SetCookie(middleware.SESS_KEY_PASSWORD, cmd.Password, days, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
+			c.SetCookie(middleware.SESS_KEY_PASSWORD, cmd.Password, days, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
 		} else {
 			c.Session.Set(middleware.SESS_KEY_PASSWORD, cmd.Password)
 		}
@@ -152,22 +151,18 @@ func loginUserWithUser(user *m.User, c *middleware.Context) {
 
 	days := 86400 * setting.LogInRememberDays
 	if days > 0 {
-		c.SetCookie(setting.CookieUserName, user.Login, days, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
+		c.SetCookie(setting.CookieUserName, user.Login, days, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
 		c.SetSuperSecureCookie(util.EncodeMd5(user.Rands+user.Password),
-			setting.CookieRememberName, user.Login, days, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
+			setting.CookieRememberName, user.Login, days, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
 	}
 
 	c.Session.Set(middleware.SESS_KEY_USERID, user.Id)
 }
 
 func Logout(c *middleware.Context) {
-	c.SetCookie(setting.CookieUserName, "", -1, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
-	c.SetCookie(setting.CookieRememberName, "", -1, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
-	c.SetCookie(middleware.SESS_KEY_PASSWORD, "", -1, setting.AppSubUrl+"/", nil, isSecure(&c.Req), true)
+	c.SetCookie(setting.CookieUserName, "", -1, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
+	c.SetCookie(setting.CookieRememberName, "", -1, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
+	c.SetCookie(middleware.SESS_KEY_PASSWORD, "", -1, setting.AppSubUrl+"/", nil, middleware.IsSecure(c), true)
 	c.Session.Destory(c)
 	c.Redirect(setting.AppSubUrl + "/login")
-}
-
-func isSecure(r *macaron.Request) bool {
-	return (r.TLS != nil) || (r.Header.Get("X-Forwarded-Proto") == "https")
 }
