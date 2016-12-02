@@ -207,7 +207,7 @@ func GetUserByEmail(query *m.GetUserByEmailQuery) error {
 	if err != nil {
 		return err
 	} else if has == false {
-		return  m.ErrUserNotFound
+		return m.ErrUserNotFound
 	}
 
 	query.Result = user
